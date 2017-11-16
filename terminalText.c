@@ -1,7 +1,6 @@
 /* Terminal Text
  * Author:	Caleb Baker
- * Date:	November 16, 2017
- * A simple app to make texting from the termux app for android easier.
+ * Date:	October 15, 2017
  */
 
 
@@ -28,10 +27,10 @@
 
 #define DEFAULT_QUEUE_SIZE 8
 
-#define RESCALING_FACTOR 1.5
+#define QUEUE_RESCALING_FACTOR 1.5
 
-#define MAX_LOAD_FACTOR 0.75
-#define HASH_MAP_RESCALING_FACTOR 1.5
+#define MAX_LOAD_FACTOR 1
+#define HASH_MAP_RESCALING_FACTOR 2
 #define HASH_MAP_START_RATIO 1.5
 #define MAP_FULL -0x80000000
 
@@ -102,7 +101,7 @@ char* getString(char *str, unsigned *size, FILE *f, char delimiter) {
 	
 	// Resize the string if necessary
 	if (i == s) {
-		s = (unsigned) (s * RESCALING_FACTOR);
+		s = (unsigned) (s * QUEUE_RESCALING_FACTOR);
 		if (s < 2) {
 		    s++;
 		}
@@ -220,7 +219,7 @@ void* getMessages(void *args) {
 ////////////// MODIFYING QUEUE/////////////////////////////////////////////////
 	    // Allocate more memory if queue is full.
 	    if (q.size == q.capacity) {
-		unsigned newCap = (unsigned) q.capacity * RESCALING_FACTOR;
+		unsigned newCap = (unsigned) q.capacity * QUEUE_RESCALING_FACTOR;
 		message *newData = (message*) malloc(newCap * sizeof(message));
 		memcpy((void*) newData, (void*) (q.data + q.front), (q.capacity - q.front) * sizeof(message));
 		memcpy((void*) (newData + q.capacity - q.front), (void*) q.data, q.front * sizeof(message));
@@ -348,9 +347,14 @@ void saveContacts(char *contactFilename, contact *contacts, unsigned numContacts
 
 int main(int argc, char **argv){
 
+    // Contact related variables.
     char *contactFilename;
     char *contactName = NULL;
     unsigned nameLen = 0;
+    unsigned hashMapSize = 0;
+    contact **nameToNum = NULL;
+    contact **numToName = NULL;
+    contact *contacts = NULL;
 
     // Open contact file.
     if (argc == 1) {
@@ -364,33 +368,29 @@ int main(int argc, char **argv){
 
     // Get the number of contacts.
     unsigned numContacts = 0;
+
     if (contactFile != NULL) {
         fscanf(contactFile, "%u\n", &numContacts);
+    
+
+        // Allocate memory.
+        if (numContacts) {
+            hashMapSize = numContacts * HASH_MAP_START_RATIO;
+	    nameToNum = calloc(hashMapSize, sizeof(contact*));
+            numToName = calloc(hashMapSize, sizeof(contact*));
+            contacts = calloc(hashMapSize, sizeof(contact));
+        }
+
+        // Insert all of the contacts into array and hash maps.
+        for (unsigned i = 0; i < numContacts; i++) {
+            contacts[i].name = getString(contacts[i].name, &contacts[i].nameSize, contactFile, ' ');
+            contacts[i].number = getString(contacts[i].number, &contacts[i].numberSize, contactFile, '\n');
+        }
+        fillHashMaps(contacts, nameToNum, numToName, numContacts, hashMapSize);
+
+        // Close file.
+        fclose(contactFile);
     }
-
-    // Declare variables to store contact information.
-    unsigned hashMapSize = 0;
-    contact **nameToNum = NULL;
-    contact **numToName = NULL;
-    contact *contacts = NULL;
-
-    // Allocate memory.
-    if (numContacts) {
-        hashMapSize = numContacts * HASH_MAP_START_RATIO;
-	nameToNum = calloc(hashMapSize, sizeof(contact*));
-	numToName = calloc(hashMapSize, sizeof(contact*));
-	contacts = calloc(hashMapSize, sizeof(contact));
-    }
-
-    // Insert all of the contacts into array and hash maps.
-    for (unsigned i = 0; i < numContacts; i++) {
-	contacts[i].name = getString(contacts[i].name, &contacts[i].nameSize, contactFile, ' ');
-	contacts[i].number = getString(contacts[i].number, &contacts[i].numberSize, contactFile, '\n');
-    }
-    fillHashMaps(contacts, nameToNum, numToName, numContacts, hashMapSize);
-
-    // Close file.
-    fclose(contactFile);
 
     // Set up queue.
     q.data = (message*) malloc(DEFAULT_QUEUE_SIZE * sizeof(message));
@@ -459,9 +459,8 @@ int main(int argc, char **argv){
 		// Add a contact
 		case 'a': {
 		    getchar();
-
 		    // Reallocate larger memory for hash maps if necessary.
-		    if (numContacts > (unsigned) (MAX_LOAD_FACTOR * hashMapSize)) {
+		    if (numContacts >= (unsigned) (MAX_LOAD_FACTOR * hashMapSize)) {
 			free(nameToNum);
 			free(numToName);
 			if (hashMapSize < 2) {
@@ -479,7 +478,6 @@ int main(int argc, char **argv){
 		    // Set name for new contact.
 		    contact *newContact = contacts + numContacts;
 		    newContact->name = getString(newContact->name, &newContact->nameSize, stdin, '\n');
-
 		    // Make sure name is valid to insert.
 		    if ('0' <= newContact->name[0] && newContact->name[0] <= '9') {
 		        printf("%s is not a valid contact name. Names cannot start with digits.\n\n\n", newContact->name);
