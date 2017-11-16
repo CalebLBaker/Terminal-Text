@@ -1,6 +1,7 @@
 /* Terminal Text
  * Author:	Caleb Baker
- * Date:	October 15, 2017
+ * Date:	November 16, 2017
+ * App for texting from the Termux app for Android.
  */
 
 
@@ -29,7 +30,7 @@
 
 #define QUEUE_RESCALING_FACTOR 1.5
 
-#define MAX_LOAD_FACTOR 1
+#define MAX_LOAD_FACTOR 0.75
 #define HASH_MAP_RESCALING_FACTOR 2
 #define HASH_MAP_START_RATIO 1.5
 #define MAP_FULL -0x80000000
