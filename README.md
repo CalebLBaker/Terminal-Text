@@ -17,7 +17,7 @@ You can respond to a message in 1 of 3 ways.
   
   c         Empties out the message queue.
   
-  *         * can be replaced with any character except y and c. Ignores the message and goes on to the next one if there is any.
+  n         n can be replaced with any character except y and c. Ignores the message and goes on to the next one if there is any.
 
 
 When the queue is empty you will be able to issue any of several commands:
