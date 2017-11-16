@@ -28,7 +28,7 @@
 
 #define DEFAULT_QUEUE_SIZE 8
 
-#define QUEUE_RESCALING_FACTOR 1.5
+#define RESCALING_FACTOR 1.5
 
 #define MAX_LOAD_FACTOR 0.75
 #define HASH_MAP_RESCALING_FACTOR 1.5
@@ -102,7 +102,7 @@ char* getString(char *str, unsigned *size, FILE *f, char delimiter) {
 	
 	// Resize the string if necessary
 	if (i == s) {
-		s = (unsigned) (s * QUEUE_RESCALING_FACTOR);
+		s = (unsigned) (s * RESCALING_FACTOR);
 		if (s < 2) {
 		    s++;
 		}
@@ -220,7 +220,7 @@ void* getMessages(void *args) {
 ////////////// MODIFYING QUEUE/////////////////////////////////////////////////
 	    // Allocate more memory if queue is full.
 	    if (q.size == q.capacity) {
-		unsigned newCap = (unsigned) q.capacity * QUEUE_RESCALING_FACTOR;
+		unsigned newCap = (unsigned) q.capacity * RESCALING_FACTOR;
 		message *newData = (message*) malloc(newCap * sizeof(message));
 		memcpy((void*) newData, (void*) (q.data + q.front), (q.capacity - q.front) * sizeof(message));
 		memcpy((void*) (newData + q.capacity - q.front), (void*) q.data, q.front * sizeof(message));
