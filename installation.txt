@@ -1,0 +1,11 @@
+Installation instructions:
+  0.  Possess an Android smart phone
+  1.  Install the Termux app from the Google play store
+  2.  Install the Termux:API app from the Google play store
+  3.  In the termux app, run the following commands:
+        git clone git@github.com:CalebLBaker/Terminal-Text.git
+        pkg install clang
+        clang Terminal-Text/terminalText.c -o text
+        
+To get the best use out of this app, set your phone up as an ssh server by following the directions on this webpage:
+  https://glow.li/tech/2015/11/06/run-an-ssh-server-on-your-android-with-termux.html
